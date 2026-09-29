@@ -1,88 +1,68 @@
 import os
+from flask import Flask, request
 import telebot
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
-from flask import Flask, request, jsonify
 
-TOKEN = '8835467489:AAGPrrerDGEoz-V3fB-Qksnh8a9Pc4iccr4'
+TOKEN = "8835467489:AAGPrrerDGEoz-V3fB-Qksnh8a9Pc4iccr4"
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
 
-# 🔗 ඔබගේ Digital Products වල Download Links මෙතැනට ලබාදෙන්න
+# Bank Details
+BANK_DETAILS = (
+    "🏦 *HNB Bank Details*\n"
+    "Acc No: `082020197245`\n"
+    "Name: MR Dilsh\n\n"
+    "මුදල් තැන්පත් කළ පසු SMS එක මගින් ස්වයංක්‍රීයව Product එක ලැබෙනු ඇත."
+)
+
+# Product Catalog
 PRODUCTS = {
-    "3500": "https://your-digital-product-link.com/kala",
-    "5500": "https://your-digital-product-link.com/bhaga",
-    "10000": "https://your-digital-product-link.com/gram"
+    "kala": {"name": "🍁 කාල", "price": "3,500", "link": "https://your-product-link.com/kala"},
+    "bhaga": {"name": "⚡ භාග", "price": "5,500", "link": "https://your-product-link.com/bhaga"},
+    "gram": {"name": "🔥 ග්‍රෑම්", "price": "10,000", "link": "https://your-product-link.com/gram"}
 }
 
-# Pending Orders මතක තබාගැනීමට
-pending_users = {}
+@app.route('/')
+def home():
+    return "Bot is running successfully!", 200
 
-BANK_DETAILS = (
-    "🏦 **ගෙවීම් සිදුකිරීම සඳහා බැංකු විස්තර:**\n\n"
-    "• Bank: **HNB Bank**\n"
-    "• Acc No: **082020197245**\n"
-    "• Name: **MR Dilsh**\n\n"
-    "⚠️ මුදල් ගෙවූ සැනින් පද්ධතිය මගින් එය Auto Verify වී ඔබගේ Digital Product එක මෙතැනට ලැබෙනු ඇත."
-)
+@app.route(f'/{TOKEN}', methods=['POST'])
+def webhook():
+    if request.headers.get('content-type') == 'application/json':
+        json_string = request.get_data().decode('utf-8')
+        update = telebot.types.Update.de_json(json_string)
+        bot.process_new_updates([update])
+        return "OK", 200
+    return "Forbidden", 403
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    markup = InlineKeyboardMarkup()
-    markup.row_width = 1
-    markup.add(
-        InlineKeyboardButton("🍁 කාල - Rs. 3,500", callback_data="pkg_3500"),
-        InlineKeyboardButton("⚡ භාග - Rs. 5,500", callback_data="pkg_5500"),
-        InlineKeyboardButton("🔥 ග්‍රෑම් - Rs. 10,000", callback_data="pkg_10000")
-    )
+    markup = telebot.types.InlineKeyboardMarkup()
+    btn1 = telebot.types.InlineKeyboardButton("🍁 කාල - Rs. 3,500", callback_data="buy_kala")
+    btn2 = telebot.types.InlineKeyboardButton("⚡ භාග - Rs. 5,500", callback_data="buy_bhaga")
+    btn3 = telebot.types.InlineKeyboardButton("🔥 ග්‍රෑම් - Rs. 10,000", callback_data="buy_gram")
+    markup.add(btn1)
+    markup.add(btn2)
+    markup.add(btn3)
+
     bot.send_message(
-        message.chat.id, 
-        "👋 සාදරයෙන් පිළිගන්නවා!\n\nකරුණාකර ඔබට අවශ්‍ය Package එක තෝරන්න:", 
-        reply_markup=markup
+        message.chat.id,
+        "👋 *සාදරයෙන් පිළිගනිමු!*\n\nකරුණාකර ඔබට අවශ්‍ය Package එක පහතින් තෝරන්න:",
+        reply_markup=markup,
+        parse_mode="Markdown"
     )
 
-@bot.callback_query_handler(func=lambda call: True)
-def callback_query(call):
-    chat_id = call.message.chat.id
-    if call.data == "pkg_3500":
-        pending_users[chat_id] = "3500"
-        bot.send_message(chat_id, f"✅ **තෝරාගත් Package එක: කාල (Rs. 3,500)**\n\n{BANK_DETAILS}", parse_mode="Markdown")
-    elif call.data == "pkg_5500":
-        pending_users[chat_id] = "5500"
-        bot.send_message(chat_id, f"✅ **තෝරාගත් Package එක: භාග (Rs. 5,500)**\n\n{BANK_DETAILS}", parse_mode="Markdown")
-    elif call.data == "pkg_10000":
-        pending_users[chat_id] = "10000"
-        bot.send_message(chat_id, f"✅ **තෝරාගත් Package එක: ග්‍රෑම් (Rs. 10,000)**\n\n{BANK_DETAILS}", parse_mode="Markdown")
+@bot.callback_query_handler(func=lambda call: call.data.startswith("buy_"))
+def handle_buy(call):
+    pkg_key = call.data.split("_")[1]
+    pkg = PRODUCTS.get(pkg_key)
+    if pkg:
+        msg = f"✅ *ඔබ තෝරාගත් Package එක:* {pkg['name']}\n💵 *මිල:* Rs. {pkg['price']}\n\n{BANK_DETAILS}"
+        bot.send_message(call.message.chat.id, msg, parse_mode="Markdown")
 
-# -------------------------------------------------------------
-# 🤖 MacroDroid Webhook (SMS එක ආපු ගමන් Auto Product එක යවන කොටස)
-# -------------------------------------------------------------
 @app.route('/sms-webhook', methods=['POST'])
 def sms_webhook():
     data = request.json or {}
-    sms_text = data.get('sms', '')
+    return "SMS Received", 200
 
-    for chat_id, amount in list(pending_users.items()):
-        if amount in sms_text or f"{int(amount):,}" in sms_text:
-            product_link = PRODUCTS.get(amount)
-            bot.send_message(
-                chat_id, 
-                f"🎉 **ගෙවීම සාර්ථකව තහවුරු විය!**\n\nඔබගේ Digital Product එක ලබාගැනීමට පහත Link එක ක්ලික් කරන්න:\n{product_link}"
-            )
-            del pending_users[chat_id]
-            return jsonify({"status": "success", "message": "Product Delivered"}), 200
-
-    return jsonify({"status": "ignored", "message": "No matching user"}), 200
-
-@app.route('/', methods=['GET'])
-def index():
-    return "Bot is running successfully!"
-
-@app.route('/' + TOKEN, methods=['POST'])
-def getMessage():
-    json_string = request.get_data().decode('utf-8')
-    update = telebot.types.Update.de_json(json_string)
-    bot.process_new_updates([update])
-    return "!", 200
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
