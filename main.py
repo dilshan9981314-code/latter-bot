@@ -5,13 +5,14 @@ import telebot
 import google.generativeai as genai
 
 TOKEN = "8835467489:AAGPrrerDGEoz-V3fB-Qksnh8a9Pc4iccr4"
-
-# Key එක හරියටම Quotation marks ඇතුළට දමා ඇත
 GEMINI_KEY = os.environ.get("GEMINI_API_KEY", "AQ.Ab8RN6LyIKLNitQOvCIsnMwipqHuCn3mXC18DCzCV98kycHUAw")
 
-# Configure AI
-genai.configure(api_key=GEMINI_KEY)
-model = genai.GenerativeModel('gemini-1.5-flash')
+# App එක Crash නොවී ආරම්භ වීමට AI Config එක Safe කර ඇත
+try:
+    genai.configure(api_key=GEMINI_KEY)
+    model = genai.GenerativeModel('gemini-1.5-flash')
+except Exception as e:
+    model = None
 
 bot = telebot.TeleBot(TOKEN, threaded=False)
 app = Flask(__name__)
@@ -64,7 +65,8 @@ def webhook():
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     chat_id = message.chat.id
-    user_chat_sessions[chat_id] = model.start_chat(history=[])
+    if model:
+        user_chat_sessions[chat_id] = model.start_chat(history=[])
     
     markup = telebot.types.InlineKeyboardMarkup()
     markup.add(telebot.types.InlineKeyboardButton("🍁 කාල - Rs. 3,500", callback_data="buy_kala"))
@@ -82,6 +84,10 @@ def send_welcome(message):
 @bot.message_handler(func=lambda msg: not msg.text.startswith('/'))
 def handle_ai_chat(message):
     chat_id = message.chat.id
+    if not model:
+        bot.send_message(chat_id, "මාගේ දරුවා, මොහොතකින් නැවත මා හා කතා කරන්න.")
+        return
+
     if chat_id not in user_chat_sessions:
         user_chat_sessions[chat_id] = model.start_chat(history=[])
 
