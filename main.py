@@ -6,7 +6,7 @@ import google.generativeai as genai
 
 TOKEN = "8835467489:AAGPrrerDGEoz-V3fB-Qksnh8a9Pc4iccr4"
 
-# Gemini API Key (Syntax Error එක නිවැරදි කර ඇත)
+# Key එක හරියටම Quotation marks ඇතුළට දමා ඇත
 GEMINI_KEY = os.environ.get("GEMINI_API_KEY", "AQ.Ab8RN6LyIKLNitQOvCIsnMwipqHuCn3mXC18DCzCV98kycHUAw")
 
 # Configure AI
