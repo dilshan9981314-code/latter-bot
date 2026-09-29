@@ -1,4 +1,3 @@
-
 import os
 import re
 from flask import Flask, request
@@ -7,9 +6,9 @@ import google.generativeai as genai
 
 TOKEN = "8835467489:AAGPrrerDGEoz-V3fB-Qksnh8a9Pc4iccr4"
 
-# මෙතැන පහත "YOUR_API_KEY_HERE" වෙනුවට ඔයා Copy කරගත් Gemini API Key එක Paste කරන්න
-GEMINI_KEY = os.environ.get("GEMINI_API_KEY", 
-AQ."Ab8RN6LyIKLNitQOvCIsnMwipqHuCn3mXC18DCzCV98kycHUAw")
+# Gemini API Key (Syntax Error එක නිවැරදි කර ඇත)
+GEMINI_KEY = os.environ.get("GEMINI_API_KEY", "AQ.Ab8RN6LyIKLNitQOvCIsnMwipqHuCn3mXC18DCzCV98kycHUAw")
+
 # Configure AI
 genai.configure(api_key=GEMINI_KEY)
 model = genai.GenerativeModel('gemini-1.5-flash')
