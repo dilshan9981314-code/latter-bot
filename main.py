@@ -4,10 +4,11 @@ from flask import Flask, request
 import telebot
 import google.generativeai as genai
 
-TOKEN = "8835467489:AAGPrrerDGEoz-V3fB-Qksnh8a9Pc4iccr4"
+# අලුත් Telegram Bot Token එක
+TOKEN = "8835467489:AAH8O0d3uV4EJ0zuVGGLZDThPvMqg9LU3Yo"
+
 GEMINI_KEY = os.environ.get("GEMINI_API_KEY", "AQ.Ab8RN6LyIKLNitQOvCIsnMwipqHuCn3mXC18DCzCV98kycHUAw")
 
-# AI Business Deviyo - System Instruction
 SYSTEM_PROMPT = """
 You are "Ganesha AI" — an elite, high-level AI Business Strategist & Master Decision Maker (දේව ස්වරූපයෙන් සිටින ශ්‍රේෂ්ඨ ව්‍යාපාරික උපදේශකයා).
 
